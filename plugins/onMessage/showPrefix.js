@@ -20,7 +20,7 @@ async function onCall({ message, getLang, data }) {
         // Ensure image exists locally
         const imagePath = path.resolve("cache/prefix_banner.jpg");
         if (!fs.existsSync(imagePath)) {
-            const imageStream = (await axios.get("https://i.imgur.com/EnGpBb3.jpg", {
+            const imageStream = (await axios.get("https://ibb.co/yn1S0jnJ", {
                 responseType: "stream"
             })).data;
             await new Promise((resolve, reject) => {
