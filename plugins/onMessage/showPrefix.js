@@ -1,36 +1,44 @@
-import axios from 'axios';
+import axios from "axios";
+import fs from "fs";
+import path from "path";
 
 const langData = {
     "en_US": {
-        "prefix": `${global.config.NAME} 𝚙𝚛𝚎𝚏𝚒𝚡 𝚒𝚜: {prefix}`
+        "prefix.get": "𝐌𝐀𝐗𝐈 prefix is: {prefix}"
+    },
+    "vi_VN": {
+        "prefix.get": "𝐌𝐀𝐗𝐈 prefix hiện tại là: {prefix}"
     }
 };
 
 async function onCall({ message, getLang, data }) {
-    const messageBody = message.body.toLowerCase().trim();
-    const prefixTriggers = [
-        "prefix",
-        "prefix?",
-        "Prefix"
+    const body = message.body?.trim().toLowerCase();
 
-        ];
-
-    if (prefixTriggers.includes(messageBody) && message.senderID !== global.botID) {
+    if (body === "prefix" && message.senderID !== global.botID) {
         const prefix = data?.thread?.data?.prefix || global.config.PREFIX;
-        const randomReaction = reactions[Math.floor(Math.random() * reactions.length)];
 
-        try {
-            const { data: gifData } = await axios.get(`https://i.imgur.com/68S6RBS.jpeg`);
-            const response = await axios.get(gifData.url, { responseType: 'stream' });
-            await message.reply({
-                body: getLang("prefix", { prefix }),
-                attachment: response.data
+        // Ensure image exists locally
+        const imagePath = path.resolve("cache/prefix_banner.jpg");
+        if (!fs.existsSync(imagePath)) {
+            const imageStream = (await axios.get("https://i.imgur.com/EnGpBb3.jpg", {
+                responseType: "stream"
+            })).data;
+            await new Promise((resolve, reject) => {
+                const writer = fs.createWriteStream(imagePath);
+                imageStream.pipe(writer);
+                writer.on("finish", resolve);
+                writer.on("error", reject);
             });
-        } catch (error) {
-            console.error(error);
-            await message.reply(getLang("prefix", { prefix }));
         }
+
+        // Send the reply with image and styled prefix
+        message.reply({
+            body: getLang("prefix.get", { prefix }),
+            attachment: fs.createReadStream(imagePath)
+        });
     }
+
+    return;
 }
 
 export default {
