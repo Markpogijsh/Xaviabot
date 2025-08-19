@@ -1,44 +1,28 @@
-import axios from "axios";
-import fs from "fs";
-import path from "path";
+import axios from 'axios';
 
 const langData = {
     "en_US": {
-        "prefix.get": "𝐌𝐀𝐗𝐈 prefix is: {prefix}"
-    },
-    "vi_VN": {
-        "prefix.get": "𝐌𝐀𝐗𝐈 prefix hiện tại là: {prefix}"
+        "prefix": "𝐌𝐀𝐗𝐈 𝚙𝚛𝚎𝚏𝚒𝚡 𝚒𝚜: [ {prefix} ]"
     }
 };
 
 async function onCall({ message, getLang, data }) {
-    const body = message.body?.trim().toLowerCase();
+    const message_body = message.body.trim();
+    const tigger = ["prefix"];
 
-    if (body === "prefix" && message.senderID !== global.botID) {
+    if (tigger.includes(message_body.toLowerCase())) {
         const prefix = data?.thread?.data?.prefix || global.config.PREFIX;
 
-        // Ensure image exists locally
-        const imagePath = path.resolve("cache/prefix_banner.jpg");
-        if (!fs.existsSync(imagePath)) {
-            const imageStream = (await axios.get("https://i.ibb.co/4R4QTKQp/VJ16ZyV.jpg", {
-                responseType: "stream"
-            })).data;
-            await new Promise((resolve, reject) => {
-                const writer = fs.createWriteStream(imagePath);
-                imageStream.pipe(writer);
-                writer.on("finish", resolve);
-                writer.on("error", reject);
+        try {
+            const response = await axios.get('https://i.ibb.co/4R4QTKQp/VJ16ZyV.jpg', { responseType: 'stream' });
+            await message.reply({
+                body: getLang("prefix", { prefix: prefix }),
+                attachment: response.data
             });
+        } catch {
+            await message.reply(getLang("prefix", { prefix: prefix }));
         }
-
-        // Send the reply with image and styled prefix
-        message.reply({
-            body: getLang("prefix.get", { prefix }),
-            attachment: fs.createReadStream(imagePath)
-        });
     }
-
-    return;
 }
 
 export default {
